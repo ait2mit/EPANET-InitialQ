@@ -1,0 +1,155 @@
+[TITLE]
+NET3 Chloramine Decay Example; Also include NDMA
+
+[OPTIONS]
+AREA_UNITS  M2
+RATE_UNITS  HR
+SOLVER      ROS2
+COUPLING    NONE
+TIMESTEP    300
+RTOL        0.0001
+ATOL        1.0e-8
+
+[SPECIES]
+BULK   Age     HR
+BULK   HOCL    MMOL
+BULK   NH3     MMOL
+BULK   NH2CL   MMOL
+BULK   NHCL2   MMOL
+BULK   I       MMOL
+
+BULK   OCL     MMOL
+BULK   NH4     MMOL
+
+BULK   ALK     MMOL    ;total alkalinity
+BULK   H       MMOL    ;hydrogen ion
+BULK   OH      MMOL    ;hydroxide ion
+BULK   CO3     MMOL    ;carbonate ion
+BULK   HCO3    MMOL    ;bicarbonate ion
+BULK   H2CO3   MMOL    ;14carbonic acid
+
+BULK   TOC     MG      ;total organic carbon
+BULK   cNH3    MG      ;ammonia as mg/L
+BULK   cNH2CL  MG      ;17monochloramine as mg/L
+
+BULK	NDMA   NG    ;18n-Nitrosodimethylamine as Nanogram /L
+
+[COEFFICIENTS]
+PARAMETER       k1   1.5e10
+PARAMETER       k2   7.6e-2
+PARAMETER       k3   1.0e6
+PARAMETER       k4   2.3e-3
+PARAMETER       k6   2.2e8
+PARAMETER       k7   4.0e5
+PARAMETER       k8   1.0e8
+PARAMETER       k9   3.0e7
+PARAMETER       k10   55.0
+
+PARAMETER       kDOC1 3.0E4
+PARAMETER       kDOC2 6.5E5
+PARAMETER       kNDMA 3.93e1; =theta; Taken from Theisis to express
+ 
+CONSTANT        S1    0.02
+CONSTANT        S2    0.50
+CONSTANT 	kw     0.0125 ; m/h
+
+[TERMS]
+ k5    (2.5e7*H) + (4.0e4*H2CO3) + (800*HCO3)
+ Sc   1e-6/1.21e-9
+ Sh    0.0149*(Re^0.88)*Sc^0.3333
+ kf    Sh*1.21e-9*3600/D;m/h
+ a1    k1*HOCL*NH3
+ a2    k2*NH2CL
+ a3    k3*HOCL*NH2CL
+ a4    k4*NHCL2
+ a5    k5*NH2CL*NH2CL
+ a6    k6*NHCL2*NH3*H
+ a7    k7*NHCL2*OH
+ a8    k8*I*NHCL2
+ a9    k9*I*NH2CL
+ a10   k10*NH2CL*NHCL2
+ a11   kDOC1*S1*TOC*NH2CL/12000
+ a12   kDOC2*S2*TOC*HOCL/12000
+ a13	4*kw*kf*NH2CL/(D*(kw+kf)); Terms associated with wall reaction
+
+[PIPE]
+RATE   Age    1; For details See EPANET manual
+RATE   HOCL    -a1 + a2 - a3 + a4 + a8 - a12
+RATE   NH3     -a1 + a2 + a5 - a6 + a11
+RATE   NH2CL    a1 - a2 - a3 + a4 - a5 + a6 - a9 - a10 - a11-a13
+RATE   NHCL2    a3 - a4 + a5 - a6 - a7 - a8 - a10
+RATE   I        a7 - a8 - a9
+RATE   H        0
+RATE   ALK      0
+RATE   TOC      0
+RATE   NDMA	(a11+a12)*kNDMA
+
+EQUIL  OCL    H*OCL - 3.16E-8*HOCL
+EQUIL  NH4    H*NH3 - 5.01E-10*NH4
+EQUIL  CO3    H*CO3 - 5.01E-11*HCO3
+EQUIL  H2CO3  H*HCO3 - 5.01E-7*H2CO3
+EQUIL  HCO3   ALK - HCO3 - 2*CO3 - OH + H
+EQUIL  OH     H*OH - 1.0E-14
+
+FORMULA     cNH3     17000*NH3
+FORMULA     cNH2CL   51500*NH2CL
+
+[TANK]
+RATE   Age    1; For details See EPANET manual
+RATE   HOCL    -a1 + a2 - a3 + a4 + a8 - a12
+RATE   NH3     -a1 + a2 + a5 - a6 + a11
+RATE   NH2CL    a1 - a2 - a3 + a4 - a5 + a6 - a9 - a10 - a11
+RATE   NHCL2    a3 - a4 + a5 - a6 - a7 - a8 - a10
+RATE   I        a7 - a8 - a9
+RATE   H        0
+RATE   ALK      0
+RATE   TOC      0
+RATE   NDMA	(a11+a12)*kNDMA
+
+EQUIL  OCL    H*OCL - 3.16E-8*HOCL
+EQUIL  NH4    H*NH3 - 5.01E-10*NH4
+EQUIL  CO3    H*CO3 - 5.01E-11*HCO3
+EQUIL  H2CO3  H*HCO3 - 5.01E-7*H2CO3
+EQUIL  HCO3   ALK - HCO3 - 2*CO3 - OH + H
+EQUIL  OH     H*OH - 1.0E-14
+
+FORMULA     cNH3     17000*NH3
+FORMULA     cNH2CL   51500*NH2CL
+
+[SOURCES]
+SETPOINT   Source   NH2CL 5.82524E-05 ; 3.0 mg/L equivalent in mol/l; 75%  USA utilities have chloramine residual between 1.0 and 3.0 mg/litre
+SETPOINT   Source   TOC    3
+
+[QUALITY]
+
+GLOBAL       ALK   0.004
+GLOBAL       H     2.818E-8
+GLOBAL       OH    3.55E-7
+
+
+[REPORT]
+  NODES   All             
+  LINKS   All 
+  ;SPECIES  All
+ SPECIES   Age     YES 8
+ SPECIES   HOCL    YES 8
+ SPECIES   NH3     YES 8
+ SPECIES   NH2CL   YES 8
+ SPECIES   NHCL2   YES 8
+ SPECIES   I       YES 8
+
+ SPECIES   OCL     YES 8
+ SPECIES   NH4     YES 8
+
+ SPECIES   ALK     YES 8    ;total alkalinity
+ SPECIES   H       YES 8    ;hydrogen ion
+ SPECIES   OH      YES 8    ;hydroxide ion
+ SPECIES   CO3     YES 8    ;carbonate ion
+ SPECIES   HCO3    YES 8    ;bicarbonate ion
+ SPECIES   H2CO3   YES 8    ;14carbonic acid
+
+ SPECIES   TOC     YES 8      ;total organic carbon
+ SPECIES   cNH3    YES 8      ;ammonia as mg/L
+ SPECIES   cNH2CL  YES 8      ;17monochloramine as mg/L
+
+ SPECIES	NDMA   YES 8    ;18n-Nitrosodimethylamine as Nanogram /L
